@@ -45,13 +45,18 @@ Client -> API -> Redis -> PostgreSQL -> MinIO
 
 ⚙️ ## Запуск проекта
 1) Клонирование репозитория
+```bash
 git clone https://github.com/y9matoJava/itmo-pastbin.git
 cd itmo-pastbin
-2) Запуск инфраструктуры (БД, Redis, MinIO)
+```
+3) Запуск инфраструктуры (БД, Redis, MinIO)
+```bash
 docker-compose up
-3) Запуск приложения
+```
+5) Запуск приложения
+```bash
 ./mvnw spring-boot:run
-
+```
 ---
 
 📡 ## API (в разработке)
