@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+
+  # 1. БАЗА ДАННЫХ (PostgreSQL) - хранилище метаданных (ссылки, даты удаления)
+  postgres:
+    image: postgres:15-alpine
+    container_name: pastbin-db
+    environment:
+      POSTGRES_DB: pastbin_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. КЭШ (Redis) - для мгновенного чтения популярных постов
+  redis:
+    image: redis:7-alpine
+    container_name: pastbin-cache
+    ports:
+      - "6379:6379"
+
+  # 3. Хранилище (MinIO) аналог s3, будут лежать файлы с текстом
+  minio:
+    image: minio/minio
+    container_name: pastbin-s3
+    ports:
+      - "9000:9000" # порт кода (API)
+      - "9001:9001" # порт для админки в браузере
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+# объявление "дисков", чтобы данные не удалялись после перезагрузки контейнеров
+volumes:
+  postgres_data:
+  minio_data:

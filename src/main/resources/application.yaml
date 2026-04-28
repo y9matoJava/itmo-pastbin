@@ -1,0 +1,21 @@
+spring:
+  # настройка подключения к PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pastbin_db
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+  # настройка JPA и hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update # автоматическое создание таблиц на основе java - классов
+    show-sql: true # показывает в консоли, какие sql запросы шлет спринг
+  # настройка кэша (redis)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  # настройка flyway (управление миграциями)
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
