@@ -20,7 +20,7 @@ import java.util.Random;
 public class PasteService {
     private final PasteRepository pasteRepository;
     private static final int HASH_LENGTH = 6;
-    private static final String HASH_CHASRS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String HASH_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     private final Random random = new Random();
 
@@ -74,8 +74,8 @@ public class PasteService {
         StringBuilder hash = new StringBuilder();
 
         for (int i = 0; i < HASH_LENGTH; i++) {
-            int index = random.nextInt(HASH_CHASRS.length());
-            hash.append(HASH_CHASRS.charAt(index));
+            int index = random.nextInt(HASH_CHARS.length());
+            hash.append(HASH_CHARS.charAt(index));
         }
         return hash.toString();
     }
