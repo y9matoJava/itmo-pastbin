@@ -23,8 +23,8 @@ public class MinioConfig {
     private String url;
 
     /** Клюс доступа (аналог логина) */
-    @Value("${minio.acces-key}")
-    private String accesKey;
+    @Value("${minio.access-key}")
+    private String accessKey;
 
     /** Секретный ключ (аналог пароля) */
     @Value("${minio.secret-key}")
@@ -42,7 +42,7 @@ public class MinioConfig {
     public MinioClient minioClient() {
         return MinioClient.builder()
                 .endpoint(url)         // куда подключаемся
-                .credentials(accesKey, secretKey)       // с какими данными
+                .credentials(accessKey, secretKey)       // с какими данными
                 .build();
     }
 }
