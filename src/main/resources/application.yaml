@@ -19,3 +19,8 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  minio:
+    url: http://localhost:9000
+    acces-key: minioadmin
+    secret-key: minioadmin
+    bucket: pastes
