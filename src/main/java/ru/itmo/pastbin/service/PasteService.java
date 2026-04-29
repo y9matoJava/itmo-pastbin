@@ -19,31 +19,44 @@ import java.util.Random;
 @Service
 public class PasteService {
     private final PasteRepository pasteRepository;
+    private final StorageService storageService;
+
     private static final int HASH_LENGTH = 6;
     private static final String HASH_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     private final Random random = new Random();
 
-    public PasteService(PasteRepository pasteRepository) {
+    public PasteService(PasteRepository pasteRepository, StorageService storageService) {
         this.pasteRepository = pasteRepository;
+        this.storageService = storageService;
     }
 
     /**
      * Создает новый текстовый блок.
      *
-     * Пока сам текст временно не сохраняется в MinIO
-     * На этом этапе мы сохраняем только метаданные в PostgreSQL.
+     * Алгоритм:
+     * 1) Генерируем уникальый hash для короткой ссылки
+     * 2) Загружаем текст в MinIO
+     * 3) Сохраняем метаданные (hash, objectKey, TTL) в PostgreSQL
+     *
+     * @param title заголовой пасты
+     * @param content текст пасты (будет сохранен в MinIO)
+     * @param ttlMinutes время жизни ссылки в минутах
+     * @return сохраненная сущность Paste с метаданными
      */
-    public Paste createPaste(String title, int ttlMinutes) {
+    public Paste createPaste(String title, String content, int ttlMinutes) {
         String hash = generateUniqueHash();
+        String objectKey = "pastes/" + hash + ".txt";
 
+
+        // шаг 1: загружаем текст в MinIO
+        storageService.upload(objectKey, content);
+
+        // шаг 2: сохраняем метаданные в PostgreSQL
         Paste paste = new Paste();
         paste.setHash(hash);
         paste.setTitle(title);
-
-        // в будущем будет путь к файлу в MinIO.
-        paste.setObjectKey("pastes/" + hash + ".txt");
-
+        paste.setObjectKey(objectKey);
         paste.setCreatedAt(LocalDateTime.now());
         paste.setExpiresAt(LocalDateTime.now().plusMinutes(ttlMinutes));
         paste.setActive(true);
