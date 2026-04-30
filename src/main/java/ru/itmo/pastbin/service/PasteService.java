@@ -6,38 +6,42 @@ import ru.itmo.pastbin.repository.PasteRepository;
 import ru.itmo.pastbin.entity.Paste;
 
 import java.time.LocalDateTime;
-import java.util.Random;
 
 /**
  * сервис для работы с paste.
  *
- * здесь находится вся бизнес-логика:
- * - генерация hash
- * - создание paste
- * - работа с БД
+ * бизнес-логика:
+ * - создание paste (текст -> MinIO, метаданные -> PostgreSQL)
+ * - генерация уникальных коротких ссылок (через HashGeneratorService)
+ *
+ * Архитектура:
+ *  PasteService координирует работу между:
+ *  - HashGeneratorService (Redis -> Base62 хеш)
+ *  - StorageService (MinIO - хранение текста)
+ *  - PasteRepository (PostgreSQL - хранение метаданных)
+ *
  */
 @Service
 public class PasteService {
     private final PasteRepository pasteRepository;
     private final StorageService storageService;
+    private final HashGeneratorService hashGeneratorService;
 
-    private static final int HASH_LENGTH = 6;
-    private static final String HASH_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-    private final Random random = new Random();
-
-    public PasteService(PasteRepository pasteRepository, StorageService storageService) {
+    public PasteService(PasteRepository pasteRepository,
+                        StorageService storageService,
+                        HashGeneratorService hashGeneratorService) {
         this.pasteRepository = pasteRepository;
         this.storageService = storageService;
+        this.hashGeneratorService = hashGeneratorService;
     }
 
     /**
      * Создает новый текстовый блок.
      *
      * Алгоритм:
-     * 1) Генерируем уникальый hash для короткой ссылки
+     * 1) Генерируем уникальый Base62 хеш через Redis счетчик
      * 2) Загружаем текст в MinIO
-     * 3) Сохраняем метаданные (hash, objectKey, TTL) в PostgreSQL
+     * 3) Сохраняем метаданные в PostgreSQL
      *
      * @param title заголовой пасты
      * @param content текст пасты (будет сохранен в MinIO)
@@ -45,14 +49,15 @@ public class PasteService {
      * @return сохраненная сущность Paste с метаданными
      */
     public Paste createPaste(String title, String content, int ttlMinutes) {
-        String hash = generateUniqueHash();
+        // шаг 1: получаем уникальный хеш (Redis INCR -> Base62)
+        String hash = hashGeneratorService.generateHash();
         String objectKey = "pastes/" + hash + ".txt";
 
 
-        // шаг 1: загружаем текст в MinIO
+        // шаг 2: загружаем текст в MinIO
         storageService.upload(objectKey, content);
 
-        // шаг 2: сохраняем метаданные в PostgreSQL
+        // шаг 3: сохраняем метаданные в PostgreSQL
         Paste paste = new Paste();
         paste.setHash(hash);
         paste.setTitle(title);
@@ -63,33 +68,5 @@ public class PasteService {
         paste.setViewsCount(0L);
 
         return pasteRepository.save(paste);
-    }
-
-
-    /**
-     * Генерирует уникальный короткий hash для ссылки.
-     *
-     * Проверяем hash в БД, чтобы не было двух paste с одинаковой ссылкой.
-     */
-    private String generateUniqueHash() {
-        String hash;
-
-        do {
-            hash = generateHash();
-        } while (pasteRepository.findByHash(hash).isPresent());
-        return hash;
-    }
-
-    /**
-     * Генерирует случайную строку из букв и цифр.
-     */
-    private String generateHash() {
-        StringBuilder hash = new StringBuilder();
-
-        for (int i = 0; i < HASH_LENGTH; i++) {
-            int index = random.nextInt(HASH_CHARS.length());
-            hash.append(HASH_CHARS.charAt(index));
-        }
-        return hash.toString();
     }
 }
