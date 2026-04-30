@@ -15,7 +15,7 @@ public class PasteController {
 
     @PostMapping
     public String createPaste(@RequestBody String text) {
-        pasteService.createPaste(text, text, 5);
+        pasteService.createPaste("тест", text = "hello", 5);
         return "бубаби";
     }
 }
