@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * 5) Через минуту ключ автоматически удаляется - счетчик сбрасывается
  */
 @Component
-public class RateLimitingInterceptor {
+public class RateLimitingInterceptor implements HandlerInterceptor {
     /** Максимальное количество запросов на создание паст в минуту с одного IP*/
     private static final int MAX_REQUESTS = 10;
 
@@ -58,5 +59,16 @@ public class RateLimitingInterceptor {
             //
             redisTemplate.expire(key, WINDOW_SECONDS, TimeUnit.SECONDS);
         }
+
+        if (requestCount != null && requestCount > MAX_REQUESTS) {
+            // лимит превышен возвращае 429 Too Many Requests
+            response.setStatus(429);
+            response.setContentType("application/json");
+            response.getWriter().write(
+                    "{\"error\": \"Превышен лимит запросов. Попробуйте через минуту.\"}"
+            );
+            return false; // запрос не пойдет в контроллер
+        }
+        return true; // запрос пропускается
     }
 }
