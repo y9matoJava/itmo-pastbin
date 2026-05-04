@@ -17,6 +17,7 @@ public class PasteRequestDto {
     private int ttlMinutes = 60;
 
     public PasteRequestDto() {}
+
     public String getTitle() { return title; }
     public void setTitle(String title) {
         this.title = title;
