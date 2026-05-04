@@ -6,7 +6,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.cache.CacheManager;
 import ru.itmo.pastbin.repository.PasteRepository;
 import ru.itmo.pastbin.service.StorageService;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Фоновая задача очистки просроченных паст
@@ -28,4 +31,25 @@ public class PasteCleanupJob {
     private final StorageService storageService;
     private final CacheManager cacheManager;
 
+    public PasteCleanupJob(PasteRepository pasteRepository,
+                           StorageService storageService,
+                           CacheManager cacheManager) {
+        this.pasteRepository = pasteRepository;
+        this.storageService = storageService;
+        this.cacheManager = cacheManager;
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void cleanupExpiredpastes() {
+        List<Paste> expired = pasteRepository.findByActiveTrueAndExpiresAtBefore(LocalDateTime.now());
+        if (expired.isEmpty()) {
+            return; // ничего не удаляем
+        }
+        for (Paste paste : expired) {
+            storageService.delete(paste.getObjectKey());
+            Objects.requireNonNull(cacheManager.getCache("pastes")).evict(paste.getHash());
+            pasteRepository.delete(paste);
+        }
+        System.out.println("[CleanupJob] удалено просроченных паст: " + expired.size());
+    }
 }
