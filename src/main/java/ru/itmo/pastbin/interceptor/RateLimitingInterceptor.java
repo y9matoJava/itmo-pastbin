@@ -47,6 +47,13 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) throws Exception {
+        // Rate Limiting только для пост запросов
+        // GET запросы пропускаем без ограничений
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
+
         // получаем ip адрес клиента
         String clientIp = request.getRemoteAddr();
         String key = KEY_PREFIX + clientIp;
