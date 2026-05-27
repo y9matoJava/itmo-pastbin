@@ -440,7 +440,17 @@
           <option value="1440">⏱ 1 день</option>
           <option value="10080">⏱ 7 дней</option>
           <option value="43200">⏱ 30 дней</option>
+          <option value="custom">⚙️ Своё время...</option>
         </select>
+        <input
+          id="customTtl"
+          class="input-title"
+          style="display: none; max-width: 100px; padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem;"
+          type="number"
+          placeholder="Мин..."
+          min="1"
+          max="525600"
+        />
       </div>
 
       <div class="editor-wrap">
@@ -521,6 +531,18 @@
     updateLineNumbers();
   });
 
+  const ttlSelect = document.getElementById('ttl');
+  const customTtlInput = document.getElementById('customTtl');
+  
+  ttlSelect.addEventListener('change', () => {
+    if (ttlSelect.value === 'custom') {
+      customTtlInput.style.display = 'inline-block';
+      customTtlInput.focus();
+    } else {
+      customTtlInput.style.display = 'none';
+    }
+  });
+
   textarea.addEventListener('scroll', () => {
     lineNumbers.scrollTop = textarea.scrollTop;
   });
@@ -545,10 +567,21 @@
       return;
     }
 
+    let finalTtl = ttlSelect.value;
+    if (finalTtl === 'custom') {
+      finalTtl = parseInt(customTtlInput.value, 10);
+      if (isNaN(finalTtl) || finalTtl < 1) {
+        showError('Пожалуйста, введите корректное время жизни в минутах (минимум 1).');
+        return;
+      }
+    } else {
+      finalTtl = parseInt(finalTtl, 10);
+    }
+
     const body = {
       title:      document.getElementById('title').value.trim() || null,
       content:    textarea.value,
-      ttlMinutes: parseInt(document.getElementById('ttl').value, 10)
+      ttlMinutes: finalTtl
     };
 
     submitBtn.disabled = true;
