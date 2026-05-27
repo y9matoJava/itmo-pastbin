@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -34,12 +33,6 @@ public class RedisConfig {
      */
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Используем builder-паттерн для GenericJacksonJsonRedisSerializer (Spring Data Redis 4.x).
-        // Builder внутри создает tools.jackson.databind.ObjectMapper с правильной настройкой
-        // полиморфной типизации для корректной сериализации/десериализации кешируемых объектов.
-        GenericJacksonJsonRedisSerializer jsonSerializer = GenericJacksonJsonRedisSerializer.builder()
-                .build();
-
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 // TTl кэша 10 минут. После этого запись удалится из Redis
                 // и следующий запрос снова пойдет в БД + MinIO
@@ -48,11 +41,6 @@ public class RedisConfig {
                 .serializeKeysWith(
                         RedisSerializationContext.SerializationPair
                                 .fromSerializer(new StringRedisSerializer())
-                )
-                // значения сериализуем как json (читаемо + совместимо между версиями)
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair
-                                .fromSerializer(jsonSerializer)
                 );
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
