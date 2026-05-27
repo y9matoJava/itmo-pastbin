@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Просмотр пасты — PastBin</title>
+  <meta name="description" content="Просмотр текстовой пасты" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #13161d;
+      --border:    #1e2330;
+      --border-hover: #2d3548;
+      --accent:    #7c6aff;
+      --accent-2:  #5b4fcf;
+      --accent-glow: rgba(124, 106, 255, 0.25);
+      --green:     #3ecf8e;
+      --red:       #ff5c5c;
+      --yellow:    #ffc42c;
+      --text-1:    #e8eaf0;
+      --text-2:    #8b90a0;
+      --text-3:    #545870;
+      --radius:    12px;
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,15,20,.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-1);
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+    }
+    .btn-new {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem 1.25rem;
+      background: rgba(124,106,255,.12);
+      border: 1px solid rgba(124,106,255,.3);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: 'Inter', sans-serif;
+      font-size: .875rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-new:hover {
+      background: rgba(124,106,255,.22);
+      border-color: rgba(124,106,255,.5);
+    }
+
+    /* ─── MAIN ─── */
+    main {
+      flex: 1;
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 5rem;
+    }
+
+    /* ─── LOADING ─── */
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      padding: 6rem 1rem;
+    }
+    .pulse-ring {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--accent);
+      border-right-color: rgba(124,106,255,.4);
+      animation: spin .9s linear infinite;
+    }
+    .loading-text {
+      color: var(--text-2);
+      font-size: .95rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── ERROR ─── */
+    #error-view {
+      display: none;
+      text-align: center;
+      padding: 5rem 1.5rem;
+    }
+    .error-code {
+      font-size: 5rem;
+      font-weight: 700;
+      color: var(--red);
+      opacity: .25;
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: .75rem;
+    }
+    .error-desc {
+      color: var(--text-2);
+      margin-bottom: 2rem;
+    }
+
+    /* ─── PASTE VIEW ─── */
+    #paste-view { display: none; animation: fadeIn .4s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ─── META BAR ─── */
+    .meta-bar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .paste-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text-1);
+      word-break: break-word;
+    }
+    .paste-title.untitled {
+      color: var(--text-3);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 1.4rem;
+    }
+
+    .meta-actions {
+      display: flex;
+      gap: .65rem;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .5rem 1rem;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
+      white-space: nowrap;
+      border: 1px solid;
+    }
+    .btn-action:active { transform: scale(.97); }
+
+    .btn-copy-code {
+      background: rgba(124,106,255,.1);
+      border-color: rgba(124,106,255,.3);
+      color: var(--accent);
+    }
+    .btn-copy-code:hover { background: rgba(124,106,255,.2); }
+
+    .btn-download {
+      background: rgba(62,207,142,.08);
+      border-color: rgba(62,207,142,.25);
+      color: var(--green);
+    }
+    .btn-download:hover { background: rgba(62,207,142,.16); }
+
+    /* ─── TAGS ─── */
+    .meta-tags {
+      display: flex;
+      gap: .65rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      font-size: .75rem;
+      font-weight: 500;
+      padding: .3rem .75rem;
+      border-radius: 20px;
+      border: 1px solid;
+    }
+    .tag-hash {
+      background: rgba(124,106,255,.08);
+      border-color: rgba(124,106,255,.2);
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .8rem;
+    }
+    .tag-created {
+      background: rgba(139,144,160,.06);
+      border-color: rgba(139,144,160,.15);
+      color: var(--text-2);
+    }
+    .tag-expires {
+      background: rgba(255,196,44,.06);
+      border-color: rgba(255,196,44,.2);
+      color: var(--yellow);
+    }
+    .tag-expires.expired {
+      background: rgba(255,92,92,.08);
+      border-color: rgba(255,92,92,.2);
+      color: var(--red);
+    }
+
+    /* ─── CODE CARD ─── */
+    .code-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,.35);
+    }
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,.2);
+    }
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red   { background: #ff5f57; }
+    .dot-yellow{ background: #ffc42c; }
+    .dot-green { background: #29c940; }
+    .code-lang-badge {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      padding: .2rem .6rem;
+      border-radius: 6px;
+    }
+
+    .code-body {
+      display: flex;
+      overflow-x: auto;
+    }
+    .line-nums {
+      padding: 1rem 0;
+      min-width: 50px;
+      background: rgba(0,0,0,.12);
+      border-right: 1px solid var(--border);
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .8rem;
+      color: var(--text-3);
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .line-nums span {
+      display: block;
+      padding-right: .75rem;
+      line-height: 1.65rem;
+    }
+    pre {
+      flex: 1;
+      padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .875rem;
+      line-height: 1.65rem;
+      color: var(--text-1);
+      white-space: pre;
+      tab-size: 2;
+      overflow: visible;
+    }
+    .code-footer {
+      padding: .65rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,.12);
+      font-size: .75rem;
+      color: var(--text-3);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 1.75rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .8rem;
+      color: var(--text-3);
+    }
+    footer a { color: var(--text-2); text-decoration: none; }
+    footer a:hover { color: var(--text-1); }
+
+    @media (max-width: 600px) {
+      header { padding: 1rem; }
+      main { padding: 1.5rem 1rem 3rem; }
+      .paste-title { font-size: 1.3rem; }
+      .meta-actions { gap: .5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-icon">📋</div>
+    PastBin
+  </a>
+  <a class="btn-new" href="/">
+    ✏️ Новая паста
+  </a>
+</header>
+
+<main>
+
+  <!-- Loading state -->
+  <div id="loading">
+    <div class="pulse-ring"></div>
+    <span class="loading-text">Загружаем пасту…</span>
+  </div>
+
+  <!-- Error state -->
+  <div id="error-view">
+    <div class="error-code" id="errCode">404</div>
+    <div class="error-title" id="errTitle">Паста не найдена</div>
+    <div class="error-desc" id="errDesc">Возможно, ссылка устарела или паста была удалена.</div>
+    <a class="btn-new" href="/" style="display:inline-flex; margin: 0 auto;">← Создать новую пасту</a>
+  </div>
+
+  <!-- Paste content -->
+  <div id="paste-view">
+
+    <div class="meta-bar">
+      <h1 id="pasteTitle" class="paste-title untitled">Без названия</h1>
+      <div class="meta-actions">
+        <button class="btn-action btn-copy-code" id="btnCopyCode" onclick="copyCode()">
+          📋 Копировать
+        </button>
+        <button class="btn-action btn-download" id="btnDownload" onclick="downloadFile()">
+          ⬇️ Скачать
+        </button>
+      </div>
+    </div>
+
+    <div class="meta-tags">
+      <div class="tag tag-hash" id="tagHash">#----</div>
+      <div class="tag tag-created" id="tagCreated">📅 …</div>
+      <div class="tag tag-expires" id="tagExpires">⏳ …</div>
+    </div>
+
+    <div class="code-card">
+      <div class="code-header">
+        <div class="dots">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+        </div>
+        <div class="code-lang-badge" id="langBadge">TEXT</div>
+      </div>
+      <div class="code-body">
+        <div class="line-nums" id="lineNums"></div>
+        <pre id="codeContent"></pre>
+      </div>
+      <div class="code-footer">
+        <span id="lineCount">— строк</span>
+        <span id="charStat">— символов</span>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <p>ITMO PastBin &mdash; учебный проект &nbsp;·&nbsp; <a href="https://github.com/y9matoJava/itmo-pastbin" target="_blank">GitHub</a></p>
+</footer>
+
+<script>
+  // ─── Get hash from URL: /paste/{hash} ───
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const hash = pathParts[pathParts.length - 1];
+
+  let pasteData = null;
+
+  // ─── Load paste ───
+  async function loadPaste() {
+    try {
+      const res  = await fetch(`/api/pastes/${hash}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(res.status, data.error || 'Не удалось загрузить пасту');
+        return;
+      }
+
+      pasteData = data;
+      renderPaste(data);
+    } catch (err) {
+      showError('—', 'Сетевая ошибка: ' + err.message);
+    }
+  }
+
+  // ─── Render paste ───
+  function renderPaste(data) {
+    document.getElementById('loading').style.display = 'none';
+    const view = document.getElementById('paste-view');
+    view.style.display = 'block';
+
+    // Title
+    const titleEl = document.getElementById('pasteTitle');
+    if (data.title) {
+      titleEl.textContent = data.title;
+      titleEl.classList.remove('untitled');
+      document.title = data.title + ' — PastBin';
+    } else {
+      document.title = `#${data.hash} — PastBin`;
+    }
+
+    // Tags
+    document.getElementById('tagHash').textContent = `#${data.hash}`;
+    document.getElementById('tagCreated').textContent = `📅 Создано: ${formatDate(data.createdAt)}`;
+
+    const expEl     = document.getElementById('tagExpires');
+    const expDate   = new Date(data.expireAt || data.expiresAt);
+    const isExpired = expDate < new Date();
+    expEl.textContent = isExpired
+      ? `⛔ Истекло: ${formatDate(data.expireAt || data.expiresAt)}`
+      : `⏳ Истекает: ${formatDate(data.expireAt || data.expiresAt)}`;
+    if (isExpired) expEl.classList.add('expired');
+
+    // Language detection
+    const lang = detectLang(data.title, data.content);
+    document.getElementById('langBadge').textContent = lang;
+
+    // Code
+    const content = data.content || '';
+    const lines   = content.split('\n');
+
+    document.getElementById('codeContent').textContent = content;
+
+    const lineNums = document.getElementById('lineNums');
+    lineNums.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+
+    document.getElementById('lineCount').textContent = `${lines.length} строк`;
+    document.getElementById('charStat').textContent  = `${content.length} символов`;
+  }
+
+  function showError(code, msg) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-view').style.display = 'block';
+    document.getElementById('errCode').textContent  = code;
+    document.getElementById('errTitle').textContent = 'Паста не найдена';
+    document.getElementById('errDesc').textContent  = msg;
+  }
+
+  // ─── Copy code ───
+  function copyCode() {
+    if (!pasteData) return;
+    navigator.clipboard.writeText(pasteData.content).then(() => {
+      const btn = document.getElementById('btnCopyCode');
+      btn.textContent = '✅ Скопировано!';
+      setTimeout(() => { btn.textContent = '📋 Копировать'; }, 2000);
+    });
+  }
+
+  // ─── Download ───
+  function downloadFile() {
+    if (!pasteData) return;
+    const ext  = getExtension(document.getElementById('langBadge').textContent);
+    const name = (pasteData.title || pasteData.hash || 'paste') + ext;
+    const blob = new Blob([pasteData.content], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── Helpers ───
+  function formatDate(str) {
+    if (!str) return '—';
+    const d = new Date(str);
+    return d.toLocaleString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function detectLang(title, content) {
+    const t = (title || '').toLowerCase();
+    const c = (content || '').substring(0, 500);
+
+    if (t.endsWith('.java') || c.includes('public class') || c.includes('import java'))  return 'JAVA';
+    if (t.endsWith('.py')   || c.startsWith('def ') || c.includes('import ') && c.includes(':')) return 'PYTHON';
+    if (t.endsWith('.js')   || c.includes('const ') || c.includes('function '))          return 'JS';
+    if (t.endsWith('.ts')   || c.includes(': string') || c.includes('interface '))       return 'TS';
+    if (t.endsWith('.go')   || c.startsWith('package '))                                 return 'GO';
+    if (t.endsWith('.rs')   || c.includes('fn main') || c.includes('let mut '))          return 'RUST';
+    if (t.endsWith('.sh')   || c.startsWith('#!/'))                                      return 'BASH';
+    if (t.endsWith('.sql')  || c.toUpperCase().includes('SELECT '))                      return 'SQL';
+    if (t.endsWith('.json') || c.trim().startsWith('{') || c.trim().startsWith('['))     return 'JSON';
+    if (t.endsWith('.xml')  || c.trim().startsWith('<?xml') || c.trim().startsWith('<')) return 'XML';
+    if (t.endsWith('.yaml') || t.endsWith('.yml'))                                       return 'YAML';
+    if (t.endsWith('.html') || c.includes('<!DOCTYPE') || c.includes('<html'))           return 'HTML';
+    if (t.endsWith('.css'))                                                               return 'CSS';
+    return 'TEXT';
+  }
+
+  function getExtension(lang) {
+    const map = {
+      JAVA:'java', PYTHON:'py', JS:'js', TS:'ts', GO:'go', RUST:'rs',
+      BASH:'sh', SQL:'sql', JSON:'json', XML:'xml', YAML:'yaml', HTML:'html', CSS:'css'
+    };
+    return '.' + (map[lang] || 'txt');
+  }
+
+  // ─── Init ───
+  if (!hash || hash === 'paste') {
+    showError('400', 'Не указан хеш пасты.');
+  } else {
+    loadPaste();
+  }
+</script>
+</body>
+</html>

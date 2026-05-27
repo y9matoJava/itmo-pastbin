@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PastBin — Поделись кодом мгновенно</title>
+  <meta name="description" content="Бесплатный сервис для хранения и обмена кодом. Создай пасту за секунды." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #13161d;
+      --border:    #1e2330;
+      --border-hover: #2d3548;
+      --accent:    #7c6aff;
+      --accent-2:  #5b4fcf;
+      --accent-glow: rgba(124, 106, 255, 0.25);
+      --green:     #3ecf8e;
+      --red:       #ff5c5c;
+      --text-1:    #e8eaf0;
+      --text-2:    #8b90a0;
+      --text-3:    #545870;
+      --radius:    12px;
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,15,20,.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-1);
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+    }
+    .header-badge {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(124,106,255,.3);
+      padding: .25rem .65rem;
+      border-radius: 20px;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      text-align: center;
+      padding: 5rem 1.5rem 3rem;
+    }
+    .hero-eyebrow {
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(135deg, var(--text-1) 40%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      color: var(--text-2);
+      font-size: 1.1rem;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ─── MAIN CARD ─── */
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 1.5rem 5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.02), 0 24px 48px rgba(0,0,0,.4);
+      transition: border-color .3s;
+    }
+    .card:focus-within {
+      border-color: rgba(124,106,255,.5);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.02), 0 0 0 3px var(--accent-glow), 0 24px 48px rgba(0,0,0,.4);
+    }
+
+    /* ─── TOOLBAR ─── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,.2);
+      flex-wrap: wrap;
+      gap: .75rem;
+    }
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex: 1;
+      min-width: 200px;
+    }
+    .input-title {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-1);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      flex: 1;
+      min-width: 0;
+    }
+    .input-title::placeholder { color: var(--text-3); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red   { background: #ff5f57; }
+    .dot-yellow{ background: #ffc42c; }
+    .dot-green { background: #29c940; }
+    .dots { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .select-ttl {
+      appearance: none;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-2);
+      font-family: 'Inter', sans-serif;
+      font-size: .85rem;
+      padding: .45rem .85rem .45rem .75rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s, background .2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b90a0'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right .6rem center;
+      padding-right: 1.8rem;
+    }
+    .select-ttl:hover { border-color: var(--border-hover); background-color: rgba(255,255,255,.07); }
+    .select-ttl option { background: #1e2330; }
+
+    /* ─── EDITOR ─── */
+    .editor-wrap {
+      display: flex;
+      min-height: 340px;
+    }
+    .line-numbers {
+      padding: 1rem 0;
+      width: 50px;
+      background: rgba(0,0,0,.12);
+      border-right: 1px solid var(--border);
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .8rem;
+      color: var(--text-3);
+      user-select: none;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .line-numbers span {
+      display: block;
+      padding-right: .75rem;
+      line-height: 1.6rem;
+    }
+    textarea#content {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      color: var(--text-1);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .9rem;
+      line-height: 1.6rem;
+      padding: 1rem 1.25rem;
+      caret-color: var(--accent);
+      tab-size: 2;
+    }
+    textarea#content::placeholder { color: var(--text-3); }
+
+    /* ─── FOOTER BAR ─── */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .85rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,.2);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .char-count {
+      font-size: .8rem;
+      color: var(--text-3);
+    }
+    .char-count span { color: var(--text-2); }
+
+    /* ─── BUTTON ─── */
+    .btn-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .65rem 1.75rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      white-space: nowrap;
+    }
+    .btn-submit:hover  { opacity: .9; transform: translateY(-1px); box-shadow: 0 6px 28px rgba(124,106,255,.4); }
+    .btn-submit:active { transform: translateY(0); opacity: 1; }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-icon { font-size: 1rem; }
+
+    /* ─── TOAST / RESULT ─── */
+    #result {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius);
+      border: 1px solid;
+      animation: fadeIn .35s ease;
+    }
+    #result.success {
+      background: rgba(62,207,142,.08);
+      border-color: rgba(62,207,142,.3);
+    }
+    #result.error {
+      background: rgba(255,92,92,.08);
+      border-color: rgba(255,92,92,.3);
+    }
+    .result-label {
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+    .success .result-label { color: var(--green); }
+    .error   .result-label { color: var(--red); }
+    .result-link {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+    }
+    .result-url {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .9rem;
+      color: var(--text-1);
+      word-break: break-all;
+      text-decoration: none;
+    }
+    .result-url:hover { color: var(--accent); }
+    .btn-copy {
+      background: rgba(124,106,255,.15);
+      border: 1px solid rgba(124,106,255,.3);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: .8rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      padding: .35rem .8rem;
+      cursor: pointer;
+      transition: background .2s;
+      flex-shrink: 0;
+    }
+    .btn-copy:hover { background: rgba(124,106,255,.28); }
+    .result-error-msg {
+      font-size: .9rem;
+      color: var(--red);
+    }
+
+    /* ─── FEATURES ─── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 3.5rem;
+    }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      transition: border-color .25s, transform .25s;
+    }
+    .feature:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: .65rem;
+    }
+    .feature-title {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text-1);
+      margin-bottom: .3rem;
+    }
+    .feature-desc {
+      font-size: .8rem;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 1.75rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .8rem;
+      color: var(--text-3);
+    }
+    footer a { color: var(--text-2); text-decoration: none; }
+    footer a:hover { color: var(--text-1); }
+
+    /* ─── SPINNER ─── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-icon, .btn-submit.loading .btn-text { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 600px) {
+      header { padding: 1rem; }
+      .hero { padding: 3rem 1rem 2rem; }
+      .toolbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-icon">📋</div>
+    PastBin
+  </a>
+  <span class="header-badge">ITMO EDITION</span>
+</header>
+
+<div class="hero">
+  <p class="hero-eyebrow">⚡ Быстро и удобно</p>
+  <h1>Поделись кодом<br/>за секунды</h1>
+  <p>Вставь код, установи время жизни и получи короткую ссылку.<br/>Кэшируется в Redis, текст хранится в MinIO.</p>
+</div>
+
+<main>
+  <form id="pasteForm">
+    <div class="card" id="editorCard">
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <input
+            id="title"
+            class="input-title"
+            type="text"
+            placeholder="Название пасты (необязательно)…"
+            maxlength="128"
+          />
+        </div>
+        <select id="ttl" class="select-ttl" title="Время жизни">
+          <option value="10">⏱ 10 минут</option>
+          <option value="30">⏱ 30 минут</option>
+          <option value="60" selected>⏱ 1 час</option>
+          <option value="360">⏱ 6 часов</option>
+          <option value="1440">⏱ 1 день</option>
+          <option value="10080">⏱ 7 дней</option>
+          <option value="43200">⏱ 30 дней</option>
+        </select>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="line-numbers" id="lineNumbers">
+          <span>1</span>
+        </div>
+        <textarea
+          id="content"
+          name="content"
+          placeholder="Вставь сюда код, логи, текст…"
+          spellcheck="false"
+          autocomplete="off"
+        ></textarea>
+      </div>
+
+      <div class="card-footer">
+        <div class="char-count">
+          Символов: <span id="charCount">0</span>
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <div class="spinner"></div>
+          <span class="btn-icon">🚀</span>
+          <span class="btn-text">Создать пасту</span>
+        </button>
+      </div>
+
+    </div>
+  </form>
+
+  <div id="result"></div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Redis кэш</div>
+      <div class="feature-desc">Повторные запросы отдаются из памяти за 0.1 мс</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🗄️</div>
+      <div class="feature-title">MinIO хранилище</div>
+      <div class="feature-desc">Тексты хранятся в S3-совместимом объектном хранилище</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔗</div>
+      <div class="feature-title">Короткие ссылки</div>
+      <div class="feature-desc">Base62 хеши генерируются через Redis INCR-счётчик</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-title">Rate limiting</div>
+      <div class="feature-desc">Защита от спама через RateLimitingInterceptor</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>ITMO PastBin &mdash; учебный проект &nbsp;·&nbsp; <a href="https://github.com/y9matoJava/itmo-pastbin" target="_blank">GitHub</a></p>
+</footer>
+
+<script>
+  const textarea   = document.getElementById('content');
+  const lineNumbers= document.getElementById('lineNumbers');
+  const charCount  = document.getElementById('charCount');
+  const submitBtn  = document.getElementById('submitBtn');
+  const resultBox  = document.getElementById('result');
+  const form       = document.getElementById('pasteForm');
+
+  // ─── Line numbers ───
+  function updateLineNumbers() {
+    const lines = textarea.value.split('\n').length;
+    lineNumbers.innerHTML = Array.from({length: lines}, (_, i) =>
+      `<span>${i + 1}</span>`
+    ).join('');
+  }
+
+  textarea.addEventListener('input', () => {
+    charCount.textContent = textarea.value.length;
+    updateLineNumbers();
+  });
+
+  textarea.addEventListener('scroll', () => {
+    lineNumbers.scrollTop = textarea.scrollTop;
+  });
+
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = textarea.selectionStart;
+      const end   = textarea.selectionEnd;
+      textarea.value = textarea.value.slice(0, start) + '  ' + textarea.value.slice(end);
+      textarea.selectionStart = textarea.selectionEnd = start + 2;
+    }
+  });
+
+  // ─── Form submit ───
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const content = textarea.value.trim();
+    if (!content) {
+      showError('Пожалуйста, введите содержимое пасты.');
+      return;
+    }
+
+    const body = {
+      title:      document.getElementById('title').value.trim() || null,
+      content:    textarea.value,
+      ttlMinutes: parseInt(document.getElementById('ttl').value, 10)
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    resultBox.style.display = 'none';
+
+    try {
+      const res  = await fetch('/api/pastes', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.error || `Ошибка ${res.status}`);
+        return;
+      }
+
+      const url = `${location.origin}/paste/${data.hash}`;
+      showSuccess(url, data.hash);
+    } catch (err) {
+      showError('Сетевая ошибка: ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('loading');
+    }
+  });
+
+  function showSuccess(url, hash) {
+    resultBox.className = 'success';
+    resultBox.style.display = 'block';
+    resultBox.innerHTML = `
+      <div class="result-label">✅ Паста создана!</div>
+      <div class="result-link">
+        <a class="result-url" href="/paste/${hash}" target="_blank">${url}</a>
+        <button class="btn-copy" id="copyBtn" onclick="copyUrl('${url}')">Копировать</button>
+      </div>`;
+    resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function showError(msg) {
+    resultBox.className = 'error';
+    resultBox.style.display = 'block';
+    resultBox.innerHTML = `
+      <div class="result-label">❌ Ошибка</div>
+      <div class="result-error-msg">${msg}</div>`;
+    resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Скопировано';
+      btn.style.background = 'rgba(62,207,142,.2)';
+      btn.style.borderColor = 'rgba(62,207,142,.4)';
+      btn.style.color = '#3ecf8e';
+      setTimeout(() => {
+        btn.textContent = 'Копировать';
+        btn.style = '';
+      }, 2200);
+    });
+  }
+</script>
+</body>
+</html>
