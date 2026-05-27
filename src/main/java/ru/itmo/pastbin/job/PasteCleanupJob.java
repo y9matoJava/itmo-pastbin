@@ -8,6 +8,7 @@ import ru.itmo.pastbin.repository.PasteRepository;
 import ru.itmo.pastbin.service.StorageService;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,7 +42,7 @@ public class PasteCleanupJob {
 
     @Scheduled(fixedRate = 60000)
     public void cleanupExpiredpastes() {
-        List<Paste> expired = pasteRepository.findByActiveTrueAndExpiresAtBefore(LocalDateTime.now());
+        List<Paste> expired = pasteRepository.findByActiveTrueAndExpiresAtBefore(LocalDateTime.now(ZoneOffset.UTC));
         if (expired.isEmpty()) {
             return; // ничего не удаляем
         }

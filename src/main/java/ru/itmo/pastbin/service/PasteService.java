@@ -7,6 +7,7 @@ import ru.itmo.pastbin.repository.PasteRepository;
 import ru.itmo.pastbin.entity.Paste;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * сервис для работы с paste.
@@ -63,8 +64,8 @@ public class PasteService {
         paste.setHash(hash);
         paste.setTitle(title);
         paste.setObjectKey(objectKey);
-        paste.setCreatedAt(LocalDateTime.now());
-        paste.setExpiresAt(LocalDateTime.now().plusMinutes(ttlMinutes));
+        paste.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
+        paste.setExpiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(ttlMinutes));
         paste.setActive(true);
         paste.setViewsCount(0L);
 
@@ -96,7 +97,7 @@ public class PasteService {
                 .orElseThrow(() -> new RuntimeException("паста не найдена: " + hash));
 
         // шаг 2: проверяем, не истекла ли паста
-        if (!paste.getActive() || paste.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (!paste.getActive() || paste.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
             throw new RuntimeException("паста истекла: " + hash);
         }
 
