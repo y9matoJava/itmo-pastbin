@@ -470,11 +470,12 @@
     document.getElementById('tagCreated').textContent = `📅 Создано: ${formatDate(data.createdAt)}`;
 
     const expEl     = document.getElementById('tagExpires');
-    const expDate   = new Date(data.expireAt || data.expiresAt);
+    const expRaw    = data.expireAt || data.expiresAt;
+    const expDate   = new Date(expRaw + 'Z');  // Z = UTC, браузер сам переведёт в местное время
     const isExpired = expDate < new Date();
     expEl.textContent = isExpired
-      ? `⛔ Истекло: ${formatDate(data.expireAt || data.expiresAt)}`
-      : `⏳ Истекает: ${formatDate(data.expireAt || data.expiresAt)}`;
+      ? `⛔ Истекло: ${formatDate(expRaw)}`
+      : `⏳ Истекает: ${formatDate(expRaw)}`;
     if (isExpired) expEl.classList.add('expired');
 
     // Language detection
@@ -529,7 +530,8 @@
   // ─── Helpers ───
   function formatDate(str) {
     if (!str) return '—';
-    const d = new Date(str);
+    // Добавляем Z: сервер хранит UTC, без Z браузер считает время локальным
+    const d = new Date(str + 'Z');
     return d.toLocaleString('ru-RU', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
