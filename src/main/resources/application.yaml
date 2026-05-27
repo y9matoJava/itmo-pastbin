@@ -1,26 +1,28 @@
 spring:
   # настройка подключения к PostgreSQL
   datasource:
-    url: jdbc:postgresql://localhost:5432/pastbin_db
-    username: user
-    password: password
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   # настройка JPA и hibernate
   jpa:
     hibernate:
-      ddl-auto: update # автоматическое создание таблиц на основе java - классов
-    show-sql: true # показывает в консоли, какие sql запросы шлет спринг
+      ddl-auto: update
+    show-sql: true
   # настройка кэша (redis)
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
+      password: ${SPRING_DATA_REDIS_PASSWORD}
   # настройка flyway (управление миграциями)
   flyway:
     enabled: true
     baseline-on-migrate: true
+
 minio:
-  url: http://localhost:9000
-  access-key: minioadmin
-  secret-key: minioadmin
-  bucket: pastes
+  url: ${MINIO_URL}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket: ${MINIO_BUCKET}
