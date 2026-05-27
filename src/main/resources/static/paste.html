@@ -411,8 +411,8 @@
         <pre id="codeContent"></pre>
       </div>
       <div class="code-footer">
-        <span id="lineCount">— строк</span>
-        <span id="charStat">— символов</span>
+        <span id="lineCount">Кол-во строк: —</span>
+        <span id="charStat">Кол-во символов: —</span>
       </div>
     </div>
 
@@ -491,8 +491,8 @@
     const lineNums = document.getElementById('lineNums');
     lineNums.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
 
-    document.getElementById('lineCount').textContent = `${lines.length} строк`;
-    document.getElementById('charStat').textContent  = `${content.length} символов`;
+    document.getElementById('lineCount').textContent = `Кол-во строк: ${lines.length}`;
+    document.getElementById('charStat').textContent  = `Кол-во символов: ${content.length}`;
   }
 
   function showError(code, msg) {
